@@ -91,6 +91,7 @@ function TextEditor() {
             command["value"] = event.key;
         }
 
+        commandList = commandList.splice(0, historyPosition);
         historyPosition++;
         commandList.push(command);
         setCurrentCommandList(commandList);
