@@ -7,7 +7,7 @@ function TextEditor() {
     const [currentEditorValue, setCurrentEditorValue] = useState("");
     const [isEditorFocused, setIsEditorFocused] = useState(true);
     const [currentCommandList, setCurrentCommandList] = useState([]);
-    const [currentHistoryPosition, setCurrentHistoryPosition] =  useState(-1);
+    const [currentHistoryPosition, setCurrentHistoryPosition] = useState(-1);
     const items = [
         {
             label: 'File',
@@ -91,9 +91,11 @@ function TextEditor() {
             command["value"] = event.key;
         }
 
-        commandList = commandList.splice(0, historyPosition);
+
         historyPosition++;
+        commandList = commandList.splice(0, historyPosition);
         commandList.push(command);
+        console.log(commandList, historyPosition);
         setCurrentCommandList(commandList);
         setCurrentHistoryPosition(historyPosition);
     }
@@ -114,8 +116,14 @@ function TextEditor() {
         let currentCommand = commandList[historyPosition];
         if (currentCommand["type"] == "add") {
             let position = currentCommand["start"];
-            editorValue = editorValue.slice(0, position)
+            editorValue = editorValue.slice(0, position);
+        } else if (currentCommand["type"] == "delete") {
+            let position = currentCommand["start"];
+            let value = currentCommand["value"];
+            editorValue = `${editorValue.substring(0, position)}${value}${editorValue.substring(position)}`;
         }
+
+        console.log(commandList, historyPosition);
 
         historyPosition--;
         setCurrentEditorValue(editorValue);
@@ -143,7 +151,13 @@ function TextEditor() {
             let position = currentCommand["start"];
             let value = currentCommand["value"];
             editorValue = `${editorValue.substring(0, position)}${value}${editorValue.substring(position)}`;
+        } else if (currentCommand["type"] == "delete") {
+            let startPosition = currentCommand["start"];
+            let endPosition = currentCommand["end"];
+            editorValue = `${editorValue.slice(0, startPosition)}${editorValue.slice(endPosition, editorValue.length)}`;
         }
+
+        console.log(commandList, historyPosition);
 
         setCurrentEditorValue(editorValue);
         setCurrentHistoryPosition(historyPosition);
