@@ -1,5 +1,5 @@
 import "./App.css";
-import TextEditor from "./pages/text-editor/text-editor";
+import TextEditor from "./pages/TextEditor/TextEditor";
 
 function App() {
   return (

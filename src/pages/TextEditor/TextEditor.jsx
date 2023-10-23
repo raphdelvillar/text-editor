@@ -1,60 +1,22 @@
 import React, { useEffect, useState } from "react";
-import MenuBar from "../../components/menu-bar";
 import { Input } from "antd";
+import menuItems from "./menuItems";
 const { TextArea } = Input;
+
+const MenuBar = React.lazy(() => import("../../components/MenuBar"))
 
 function TextEditor() {
     const [currentEditorValue, setCurrentEditorValue] = useState("");
     const [isEditorFocused, setIsEditorFocused] = useState(true);
     const [currentCommandList, setCurrentCommandList] = useState([]);
     const [currentHistoryPosition, setCurrentHistoryPosition] = useState(-1);
-    const items = [
-        {
-            label: 'File',
-            key: 'file',
-            children: [
-                {
-                    label: 'New',
-                    key: 'file:new',
-                    onClick: () => {
-                        handleNew()
-                    }
-                }
-            ],
-        },
-        {
-            label: 'Edit',
-            key: 'edit',
-            children: [
-                {
-                    label: 'Undo',
-                    key: 'edit:undo',
-                    onClick: () => {
-                        handleUndoEvent(true);
-                    }
-                },
-                {
-                    label: 'Redo',
-                    key: 'edit:redo',
-                    onClick: () => {
-                        handleRedoEvent(true);
-                    }
-                }
-            ],
-        },
-        {
-            label: 'View',
-            key: 'view',
-            disabled: true
-        }
-    ];
 
     useEffect(() => {
         document.addEventListener('keydown', keydownHandler);
         return () => {
             document.removeEventListener('keydown', keydownHandler);
         }
-    }, [isEditorFocused, currentCommandList, currentHistoryPosition])
+    }, [currentEditorValue, isEditorFocused, currentCommandList, currentHistoryPosition])
 
     const handleNew = () => {
         setCurrentEditorValue("");
@@ -103,7 +65,6 @@ function TextEditor() {
             command["value"] = event.key;
         }
 
-
         historyPosition++;
         commandList = commandList.splice(0, historyPosition);
         commandList.push(command);
@@ -112,17 +73,16 @@ function TextEditor() {
         setCurrentHistoryPosition(historyPosition);
     }
 
-    const handleUndoEvent = (isFocused) => {
-        if (!isFocused) return;
+    const handleUndoEvent = (isEnabled) => {
+        if (!isEnabled) return;
         console.log("undo")
-        let historyPosition = currentHistoryPosition;
-
         // nothing to undo
-        if (historyPosition == -1) {
+        if (currentHistoryPosition == -1) {
             console.log("there is nothing to undo");
             return;
         };
 
+        let historyPosition = currentHistoryPosition;
         let commandList = currentCommandList;
         let editorValue = currentEditorValue;
         let currentCommand = commandList[historyPosition];
@@ -132,7 +92,9 @@ function TextEditor() {
         } else if (currentCommand["type"] == "delete") {
             let position = currentCommand["start"];
             let value = currentCommand["value"];
+            console.log(editorValue);
             editorValue = `${editorValue.substring(0, position)}${value}${editorValue.substring(position)}`;
+            console.log(editorValue);
         }
 
         console.log(commandList, historyPosition);
@@ -142,21 +104,18 @@ function TextEditor() {
         setCurrentHistoryPosition(historyPosition);
     }
 
-    const handleRedoEvent = (isFocused) => {
-        if (!isFocused) return;
+    const handleRedoEvent = (isEnabled) => {
+        if (!isEnabled) return;
         console.log("redo")
-
-        let commandList = currentCommandList;
-        let historyPosition = currentHistoryPosition;
-
         // nothing to redo
-        if (historyPosition + 1 == currentCommandList.length) {
+        if (currentHistoryPosition == currentCommandList.length - 1) {
             console.log("there is nothing to redo");
             return;
         }
 
+        let commandList = currentCommandList;
+        let historyPosition = currentHistoryPosition;
         let editorValue = currentEditorValue;
-
         historyPosition++;
         let currentCommand = commandList[historyPosition];
         if (currentCommand["type"] == "add") {
@@ -175,9 +134,11 @@ function TextEditor() {
         setCurrentHistoryPosition(historyPosition);
     }
 
+    const menuBarItems = menuItems(handleNew, handleUndoEvent, handleRedoEvent);
+
     return (
         <div className="container">
-            <MenuBar mode={"horizontal"} items={items} />
+            <MenuBar mode={"horizontal"} items={menuBarItems} />
             <TextArea className="text-editor-area"
                 value={currentEditorValue}
                 autoFocus
