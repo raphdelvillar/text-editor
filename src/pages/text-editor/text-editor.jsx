@@ -16,11 +16,10 @@ function TextEditor() {
                 {
                     label: 'New',
                     key: 'file:new',
-                },
-                {
-                    label: 'Exit',
-                    key: 'file:exit'
-                },
+                    onClick: () => {
+                        handleNew()
+                    }
+                }
             ],
         },
         {
@@ -29,11 +28,17 @@ function TextEditor() {
             children: [
                 {
                     label: 'Undo',
-                    key: 'edit:undo'
+                    key: 'edit:undo',
+                    onClick: () => {
+                        handleUndoEvent(true);
+                    }
                 },
                 {
                     label: 'Redo',
-                    key: 'edit:redo'
+                    key: 'edit:redo',
+                    onClick: () => {
+                        handleRedoEvent(true);
+                    }
                 }
             ],
         },
@@ -51,7 +56,14 @@ function TextEditor() {
         }
     }, [isEditorFocused, currentCommandList, currentHistoryPosition])
 
-    function keydownHandler(event) {
+    const handleNew = () => {
+        setCurrentEditorValue("");
+        setIsEditorFocused(true);
+        setCurrentCommandList([]);
+        setCurrentHistoryPosition(-1);
+    }
+
+    const keydownHandler = (event) => {
         if (!isEditorFocused) return;
 
         // this is to prevent the default undo/redo in the browser
@@ -60,12 +72,12 @@ function TextEditor() {
         }
 
         if (event.ctrlKey && event.key == "<") {
-            handleUndoEvent(event);
+            handleUndoEvent(isEditorFocused);
             return;
         }
 
         if (event.ctrlKey && event.key == ">") {
-            handleRedoEvent(event);
+            handleRedoEvent(isEditorFocused);
             return;
         }
 
@@ -100,8 +112,8 @@ function TextEditor() {
         setCurrentHistoryPosition(historyPosition);
     }
 
-    function handleUndoEvent(event) {
-        if (!isEditorFocused) return;
+    const handleUndoEvent = (isFocused) => {
+        if (!isFocused) return;
         console.log("undo")
         let historyPosition = currentHistoryPosition;
 
@@ -112,7 +124,7 @@ function TextEditor() {
         };
 
         let commandList = currentCommandList;
-        let editorValue = event.srcElement.value;
+        let editorValue = currentEditorValue;
         let currentCommand = commandList[historyPosition];
         if (currentCommand["type"] == "add") {
             let position = currentCommand["start"];
@@ -130,8 +142,8 @@ function TextEditor() {
         setCurrentHistoryPosition(historyPosition);
     }
 
-    function handleRedoEvent(event) {
-        if (!isEditorFocused) return;
+    const handleRedoEvent = (isFocused) => {
+        if (!isFocused) return;
         console.log("redo")
 
         let commandList = currentCommandList;
@@ -143,7 +155,7 @@ function TextEditor() {
             return;
         }
 
-        let editorValue = event.srcElement.value;
+        let editorValue = currentEditorValue;
 
         historyPosition++;
         let currentCommand = commandList[historyPosition];
