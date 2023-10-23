@@ -31,6 +31,7 @@ function TextEditor() {
         // this is to prevent the default undo/redo in the browser
         if ((event.ctrlKey && event.key == "z") || (event.ctrlKey && event.key == "y")) {
             event.preventDefault();
+            return;
         }
 
         if (event.ctrlKey && event.key == "<") {
@@ -43,34 +44,116 @@ function TextEditor() {
             return;
         }
 
-        if (event.key != "Backspace" && event.key.length != 1) return;
-
-        let command = {
-            "start": event.srcElement.selectionStart,
-            "end": event.srcElement.selectionEnd
+        // we don't record copy event
+        if (event.ctrlKey && event.key == "c") {
+            return;
         }
 
+        if (event.ctrlKey && event.key == "v") {
+            handlePasteEvent(event);
+            return;
+        }
+
+        if (event.key == "Backspace") {
+            handleDeleteEvent(event);
+            return;
+        }
+
+        if (event.key == "Enter") {
+            handleEnterEvent(event);
+            return;
+        }
+
+        if (event.ctrlKey && event.key == "x") {
+            handleCutEvent(event);
+            return;
+        }
+
+        if (event.key.length == 1) {
+            handleTypeEvent(event);
+            return;
+        }
+    }
+
+    const handleSetCommand = (command) => {
         let commandList = currentCommandList;
         let historyPosition = currentHistoryPosition;
-        if (event.key == "Backspace") {
-            command["type"] = "delete";
-
-            if (window.getSelection().toString() == "") {
-                command["value"] = commandList[commandList.length - 1].value;
-            } else {
-                command["value"] = window.getSelection().toString();
-            }
-        } else if (event.key.length == 1) {
-            command["type"] = "add";
-            command["value"] = event.key;
-        }
-
         historyPosition++;
         commandList = commandList.splice(0, historyPosition);
         commandList.push(command);
         console.log(commandList, historyPosition);
         setCurrentCommandList(commandList);
         setCurrentHistoryPosition(historyPosition);
+    }
+
+    const handleEnterEvent = (event) => {
+        let command = {
+            "start": event.srcElement.selectionStart,
+            "end": event.srcElement.selectionEnd,
+            "type": "add",
+            "value": "\n"
+        }
+
+        handleSetCommand(command);
+    }
+
+    const handleTypeEvent = (event) => {
+        let command = {
+            "start": event.srcElement.selectionStart,
+            "end": event.srcElement.selectionEnd,
+            "type": "add",
+            "value": event.key
+        }
+
+        handleSetCommand(command);
+    }
+
+    const handleCutEvent = (event) => {
+        if (window.getSelection().toString() == "") return;
+
+        let command = {
+            "start": event.srcElement.selectionStart,
+            "end": event.srcElement.selectionEnd,
+            "type": "delete"
+        }
+
+        command["value"] = window.getSelection().toString();
+
+        handleSetCommand(command);
+    }
+
+    const handleDeleteEvent = (event) => {
+        let command = {
+            "start": event.srcElement.selectionStart,
+            "end": event.srcElement.selectionEnd,
+            "type": "delete"
+        }
+
+        let commandList = currentCommandList;
+        if (window.getSelection().toString() == "") {
+            command["value"] = commandList[commandList.length - 1]
+        } else {
+            command["value"] = window.getSelection().toString();
+        }
+
+        handleSetCommand(command);
+    }
+
+    const handlePasteEvent = (event) => {
+        navigator.clipboard.readText().then((copiedText) => {
+            if (copiedText == "") return;
+
+            let command = {
+                "start": event.srcElement.selectionStart,
+                "end": event.srcElement.selectionEnd,
+                "type": "add",
+                "value": copiedText
+            }
+
+            handleSetCommand(command);
+        }).catch(_ => {
+            console.log("error copying text")
+        })
     }
 
     const handleUndoEvent = (isEnabled) => {
@@ -87,8 +170,16 @@ function TextEditor() {
         let editorValue = currentEditorValue;
         let currentCommand = commandList[historyPosition];
         if (currentCommand["type"] == "add") {
+            let value = currentCommand["value"];
             let position = currentCommand["start"];
-            editorValue = editorValue.slice(0, position);
+
+            if (value.length == 1) {
+                editorValue = editorValue.slice(0, position);
+            } else {
+                let initialPosition = position - value.length;
+                editorValue = `${editorValue.slice(0, initialPosition)}${editorValue.substring(position)}`
+            }
+
         } else if (currentCommand["type"] == "delete") {
             let position = currentCommand["start"];
             let value = currentCommand["value"];
@@ -96,8 +187,6 @@ function TextEditor() {
             editorValue = `${editorValue.substring(0, position)}${value}${editorValue.substring(position)}`;
             console.log(editorValue);
         }
-
-        console.log(commandList, historyPosition);
 
         historyPosition--;
         setCurrentEditorValue(editorValue);
@@ -127,8 +216,6 @@ function TextEditor() {
             let endPosition = currentCommand["end"];
             editorValue = `${editorValue.slice(0, startPosition)}${editorValue.slice(endPosition, editorValue.length)}`;
         }
-
-        console.log(commandList, historyPosition);
 
         setCurrentEditorValue(editorValue);
         setCurrentHistoryPosition(historyPosition);
