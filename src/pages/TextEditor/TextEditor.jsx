@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { Input } from "antd";
 import menuItems from "./menuItems";
 const { TextArea } = Input;
 
-const MenuBar = React.lazy(() => import("../../components/MenuBar"))
+const MenuBar = lazy(() => import("../../components/MenuBar"))
+
+const ADD = "add";
+const DELETE = "delete";
 
 function TextEditor() {
     const [currentEditorValue, setCurrentEditorValue] = useState("");
@@ -77,11 +80,9 @@ function TextEditor() {
 
     const handleSetCommand = (command) => {
         let commandList = currentCommandList;
-        let historyPosition = currentHistoryPosition;
-        historyPosition++;
+        let historyPosition = currentHistoryPosition + 1;
         commandList = commandList.splice(0, historyPosition);
         commandList.push(command);
-        console.log(commandList, historyPosition);
         setCurrentCommandList(commandList);
         setCurrentHistoryPosition(historyPosition);
     }
@@ -90,7 +91,7 @@ function TextEditor() {
         let command = {
             "start": event.srcElement.selectionStart,
             "end": event.srcElement.selectionEnd,
-            "type": "add",
+            "type": ADD,
             "value": "\n"
         }
 
@@ -101,7 +102,7 @@ function TextEditor() {
         let command = {
             "start": event.srcElement.selectionStart,
             "end": event.srcElement.selectionEnd,
-            "type": "add",
+            "type": ADD,
             "value": event.key
         }
 
@@ -114,7 +115,7 @@ function TextEditor() {
         let command = {
             "start": event.srcElement.selectionStart,
             "end": event.srcElement.selectionEnd,
-            "type": "delete"
+            "type": DELETE
         }
 
         command["value"] = window.getSelection().toString();
@@ -126,7 +127,7 @@ function TextEditor() {
         let command = {
             "start": event.srcElement.selectionStart,
             "end": event.srcElement.selectionEnd,
-            "type": "delete"
+            "type": DELETE
         }
 
         let commandList = currentCommandList;
@@ -146,7 +147,7 @@ function TextEditor() {
             let command = {
                 "start": event.srcElement.selectionStart,
                 "end": event.srcElement.selectionEnd,
-                "type": "add",
+                "type": ADD,
                 "value": copiedText
             }
 
@@ -158,10 +159,9 @@ function TextEditor() {
 
     const handleUndoEvent = (isEnabled) => {
         if (!isEnabled) return;
-        console.log("undo")
         // nothing to undo
         if (currentHistoryPosition == -1) {
-            console.log("there is nothing to undo");
+            window.alert("There is nothing to undo");
             return;
         };
 
@@ -169,23 +169,20 @@ function TextEditor() {
         let commandList = currentCommandList;
         let editorValue = currentEditorValue;
         let currentCommand = commandList[historyPosition];
-        if (currentCommand["type"] == "add") {
+        if (currentCommand["type"] == ADD) {
             let value = currentCommand["value"];
             let position = currentCommand["start"];
 
-            if (value.length == 1) {
-                editorValue = editorValue.slice(0, position);
-            } else {
-                let initialPosition = position - value.length;
+            if (value.length == 1) editorValue = editorValue.slice(0, position);
+            else {
+                let initialPosition = position > value.length ? position - value.length : value.length - position;
                 editorValue = `${editorValue.slice(0, initialPosition)}${editorValue.substring(position)}`
             }
 
-        } else if (currentCommand["type"] == "delete") {
+        } else if (currentCommand["type"] == DELETE) {
             let position = currentCommand["start"];
             let value = currentCommand["value"];
-            console.log(editorValue);
             editorValue = `${editorValue.substring(0, position)}${value}${editorValue.substring(position)}`;
-            console.log(editorValue);
         }
 
         historyPosition--;
@@ -195,23 +192,21 @@ function TextEditor() {
 
     const handleRedoEvent = (isEnabled) => {
         if (!isEnabled) return;
-        console.log("redo")
         // nothing to redo
         if (currentHistoryPosition == currentCommandList.length - 1) {
-            console.log("there is nothing to redo");
+            window.alert("There is nothing to redo");
             return;
         }
 
         let commandList = currentCommandList;
-        let historyPosition = currentHistoryPosition;
+        let historyPosition = currentHistoryPosition + 1;
         let editorValue = currentEditorValue;
-        historyPosition++;
         let currentCommand = commandList[historyPosition];
-        if (currentCommand["type"] == "add") {
+        if (currentCommand["type"] == ADD) {
             let position = currentCommand["start"];
             let value = currentCommand["value"];
             editorValue = `${editorValue.substring(0, position)}${value}${editorValue.substring(position)}`;
-        } else if (currentCommand["type"] == "delete") {
+        } else if (currentCommand["type"] == DELETE) {
             let startPosition = currentCommand["start"];
             let endPosition = currentCommand["end"];
             editorValue = `${editorValue.slice(0, startPosition)}${editorValue.slice(endPosition, editorValue.length)}`;
