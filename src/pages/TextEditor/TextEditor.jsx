@@ -78,11 +78,13 @@ function TextEditor() {
         }
     }
 
-    const handleSetCommand = (command) => {
+    const handleSetCommand = (commands) => {
         let commandList = currentCommandList;
-        let historyPosition = currentHistoryPosition + 1;
+        let historyPosition = currentHistoryPosition + commands.length;
+        console.log(commands, commandList, historyPosition);
         commandList = commandList.splice(0, historyPosition);
-        commandList.push(command);
+        commandList = commandList.concat(commands);
+        console.log(commandList, historyPosition);
         setCurrentCommandList(commandList);
         setCurrentHistoryPosition(historyPosition);
     }
@@ -93,20 +95,25 @@ function TextEditor() {
             "end": event.srcElement.selectionEnd,
             "type": ADD,
             "value": "\n"
-        }
+        };
 
-        handleSetCommand(command);
+        handleSetCommand([command]);
     }
 
     const handleTypeEvent = (event) => {
+        if (window.getSelection().toString() != "") {
+            handleSelectionChangeEvent(event);
+            return;
+        }
+
         let command = {
             "start": event.srcElement.selectionStart,
             "end": event.srcElement.selectionEnd,
             "type": ADD,
             "value": event.key
-        }
+        };
 
-        handleSetCommand(command);
+        handleSetCommand([command]);
     }
 
     const handleCutEvent = (event) => {
@@ -115,12 +122,32 @@ function TextEditor() {
         let command = {
             "start": event.srcElement.selectionStart,
             "end": event.srcElement.selectionEnd,
-            "type": DELETE
-        }
+            "type": DELETE,
+            "value": window.getSelection().toString()
+        };
 
-        command["value"] = window.getSelection().toString();
+        handleSetCommand([command]);
+    }
 
-        handleSetCommand(command);
+    const handleSelectionChangeEvent = (event) => {
+        if (window.getSelection().toString() == "") return;
+
+        let commands = [
+            {
+                "start": event.srcElement.selectionStart,
+                "end": event.srcElement.selectionEnd,
+                "type": DELETE,
+                "value": window.getSelection().toString()
+            },
+            {
+                "start": event.srcElement.selectionStart,
+                "end": event.srcElement.selectionStart,
+                "type": ADD,
+                "value": event.key
+            }
+        ];
+
+        handleSetCommand(commands);
     }
 
     const handleDeleteEvent = (event) => {
@@ -137,7 +164,7 @@ function TextEditor() {
             command["value"] = window.getSelection().toString();
         }
 
-        handleSetCommand(command);
+        handleSetCommand([command]);
     }
 
     const handlePasteEvent = (event) => {
@@ -151,7 +178,7 @@ function TextEditor() {
                 "value": copiedText
             }
 
-            handleSetCommand(command);
+            handleSetCommand([command]);
         }).catch(_ => {
             console.log("error copying text")
         })
@@ -173,7 +200,7 @@ function TextEditor() {
             let value = currentCommand["value"];
             let position = currentCommand["start"];
 
-            if (value.length == 1) editorValue = editorValue.slice(0, position);
+            if (value.length == 1) editorValue = `${editorValue.slice(0, position)}${editorValue.slice(position + 1)}`;
             else {
                 let initialPosition = position > value.length ? position - value.length : value.length - position;
                 editorValue = `${editorValue.slice(0, initialPosition)}${editorValue.substring(position)}`
@@ -202,6 +229,7 @@ function TextEditor() {
         let historyPosition = currentHistoryPosition + 1;
         let editorValue = currentEditorValue;
         let currentCommand = commandList[historyPosition];
+
         if (currentCommand["type"] == ADD) {
             let position = currentCommand["start"];
             let value = currentCommand["value"];
