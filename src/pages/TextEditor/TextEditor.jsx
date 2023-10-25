@@ -37,12 +37,12 @@ function TextEditor() {
             return;
         }
 
-        if (event.ctrlKey && event.key == "<") {
+        if ((event.ctrlKey && event.key == "<") || (event.ctrlKey && event.shiftKey && event.key == ",")) {
             handleUndoEvent(isEditorFocused);
             return;
         }
 
-        if (event.ctrlKey && event.key == ">") {
+        if ((event.ctrlKey && event.key == ">") || (event.ctrlKey && event.shiftKey && event.key == ".")) {
             handleRedoEvent(isEditorFocused);
             return;
         }
@@ -81,10 +81,8 @@ function TextEditor() {
     const handleSetCommand = (commands) => {
         let commandList = currentCommandList;
         let historyPosition = currentHistoryPosition + commands.length;
-        console.log(commands, commandList, historyPosition);
         commandList = commandList.splice(0, historyPosition);
         commandList = commandList.concat(commands);
-        console.log(commandList, historyPosition);
         setCurrentCommandList(commandList);
         setCurrentHistoryPosition(historyPosition);
     }
@@ -250,7 +248,7 @@ function TextEditor() {
     return (
         <div className="container">
             <MenuBar mode={"horizontal"} items={menuBarItems} />
-            <TextArea className="text-editor-area"
+            <TextArea aria-label="text-editor-area" className="text-editor-area"
                 value={currentEditorValue}
                 autoFocus
                 showCount
