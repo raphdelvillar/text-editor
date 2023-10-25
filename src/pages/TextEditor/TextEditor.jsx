@@ -3,7 +3,7 @@ import { Input } from "antd";
 import menuItems from "./menuItems";
 const { TextArea } = Input;
 
-const MenuBar = lazy(() => import("../../components/MenuBar"))
+const MenuBar = lazy(() => import("../../components/TextEditor/MenuBar"))
 
 const ADD = "add";
 const DELETE = "delete";
@@ -202,7 +202,8 @@ function TextEditor() {
 
             if (value.length == 1) editorValue = `${editorValue.slice(0, position)}${editorValue.slice(position + 1)}`;
             else {
-                let initialPosition = position > value.length ? position - value.length : value.length - position;
+                value = value.replaceAll(/(?:\r\n|\r|\n)/g, " ");
+                let initialPosition = position - value.length;
                 editorValue = `${editorValue.slice(0, initialPosition)}${editorValue.substring(position)}`
             }
 
